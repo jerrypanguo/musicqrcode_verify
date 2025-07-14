@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书籍验证 - 正版验证系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>乐谱验证系统</h1>
+            <p class="subtitle">正版乐谱真伪验证</p>
+        </div>
+
+        <div class="card" id="loadingCard">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>正在验证中...</p>
+            </div>
+        </div>
+
+        <div class="card hidden" id="validCard">
+            <div class="success-icon">✓</div>
+            <h2>验证成功</h2>
+            <p>这是一本<strong>正版乐谱</strong></p>
+            <div class="book-info">
+                <p><strong>验证码：</strong><span id="codeDisplay"></span></p>
+                <p><strong>验证时间：</strong><span id="verifyTime"></span></p>
+                <p class="note">感谢您购买正版乐谱</p>
+            </div>
+        </div>
+
+        <div class="card hidden" id="invalidCard">
+            <div class="error-icon">×</div>
+            <h2>验证失败</h2>
+            <p>此验证码无效或不存在</p>
+            <div class="error-details">
+                <p>可能的原因：</p>
+                <ul>
+                    <li>验证码不正确</li>
+                    <li>二维码已损坏</li>
+                    <li>非正版乐谱</li>
+                </ul>
+            </div>
+            <button class="btn btn-secondary" onclick="location.reload()">重新验证</button>
+        </div>
+
+        <div class="footer">
+            <p>正版乐谱验证系统 - Yuze Pan</p>
+            <p><small>如有问题，请联系vx:Guitar_yuze</small></p>
+        </div>
+    </div>
+
+    <script>
+        // 这里存储所有有效的验证码
+        const VALID_CODES = [
+            'GERS6PK5EFMW',
+            'EGRY8EJJ9BHF',
+            'E72WQ99DHQM3',
+            'BGG8UEBL378U',
+            'WGDJXWPFVWAF',
+            'YQCNP8SVXUVR',
+            '7QD7ZF2MT6BL',
+            '9G4KBA4AZJXD',
+            'XH5H4DU4R3C6',
+            'BJCCS6UMTPCV',
+            'WFP322MMRXKF',
+            '687BZFLMKVG3',
+            'HF9EJUSAAEXG',
+            'R5BENUJV4TC8',
+            'YUMR2BVSK8YA',
+            'VD5NAN5MUJZD',
+            '35TD5Q4FV3MD',
+            'BU8ZVCVTPM4T',
+            '6Y4ZK9VHXQXQ',
+            '4U44SB3KQA4J',
+            'FXPBLP768BDB',
+            'LX3EC953QW4G',
+            '6UAAF9K4Y7R8',
+            'GBBMNSSFJDC7',
+            'DTX8ZFAEC7EG',
+            'WZ5LMKC5E6HV',
+            'TJXZ246B9Y39',
+            'XDC7PWP8NF28',
+            'PM7UX6W8W4R4',
+            'EMGSRR4SWD9F',
+            'A65LTLP3QW73',
+            'QU5KJ2WW4GT2',
+            'Y9BWH2Z34PUC',
+            'D4Y2YMDWLTVB',
+            'XWNWAZFMMBAN',
+            'QETN66RL4TWY',
+            'RVXZZ5K6KDH8',
+            'F4L9USLSYGT5',
+            'BKEKNSNDHVTR',
+            'R3SKC5XMRNS3',
+            'WJGNX75W78T8',
+            'G99AB8XZKPCA',
+            'RWMVP45HBCGM',
+            '55S7YFK29Y45',
+            '5WDR9F6AY8Y5',
+            '7GNSZH3FNB2M',
+            'QGEDVLQZNZQB',
+            'FSY7V2F9X9DT',
+            '4TQTCTYN48KD',
+            '4RSVDASUF2WH',
+            'VPLHJGFCSNDX',
+            'J86BRH9U78Q7',
+            'UFYTEUB8P469',
+            'DV5CRB8VA2QC',
+            '34TP2DQ5JWY8',
+            '8DP6WD945NWG',
+            'LYKHH2Y74CPG',
+            'MJM9REFJCEUU',
+            '9TV3NFGGAPV5',
+            '834XWMK3WSUK',
+            '4AAVDYC3LT8E',
+            'PABG7H6WKNKR',
+            'ZNV4L5JRAJNR',
+            'LQ9RB8CKDVYJ',
+            'QH973J6F3XMG',
+            'ML5XKTNUEPJU',
+            'LKM7R8BTS852',
+            'HBRCPB9PYFL5',
+            'XLCDNVUWAND9',
+            'WBUTVVHBQ3BF',
+            'JBAVGDMYBUYV',
+            'CA435CSLHDA2',
+            'UDW4QNWTFM4Q',
+            '48WQ2SATVGEX',
+            'ANJEJT6XV5F4',
+            'LF5UFV6Z8LDZ',
+            'H7FMKT9DPQJD',
+            '2LKYHBQCGZE9',
+            'U5LQVASES7ZD',
+            'Q82QXFFS9CU8',
+            'P4RMCQWE39M4',
+            'HB8YG7PBFXD2',
+            'JZN5HADS4RD5',
+            'S9WNQ85Q3AGM',
+            '6FMTL9G6CBGQ',
+            'SD2VH29QRTR8',
+            '78CYPLHLLD8H',
+            'UXBXSBCSCHUC',
+            'V7TVGZXWYKUW',
+            'KPPPJ42MR79J',
+            'JKBTA8WRBSAV',
+            'CQUFBTNU9577',
+            'DH6ATUQ6BR87',
+            'WC4HL3RP66EZ',
+            'N98592DLN4P2',
+            'AR9VB5PBHT52',
+            '9J4G92DN8RAP',
+            'A4JW3YZJMDW2',
+            'WWBCL2P4LQK8',
+            '3HH4NXMRLBB5',
+            'RXLAFFZSCCJ5',
+            'F8LKR9B4669B',
+            'CTYAE7BDDBWR',
+            'BS5782STSEBG',
+            'YKDJHG92EQ2A',
+            'JC3TCQSY4VGX',
+            'A73F8UE6AEQY',
+            '3NT5MB9Z6XNM',
+            'PQFHSKQ9TLR6',
+            'J6ZYTNYUDBXA',
+            'MRQJWSJZ4AS2',
+            'VRBRS8P82SG6',
+            'QMCJXZF87YBX',
+            '5DFLJ5XV8F89',
+            'SJUHYHFY9F56',
+            '99W2MLJZYA8E',
+            'TRHAE5Q32TTH',
+            '2FRTDUCUN5Q4',
+            'Z43VQFFXKMFF',
+            'THZ28DA57QCJ',
+            'UTUJH8MUGTVJ',
+            '7RVX89SB3DH8',
+            'S3SGK9LSGFRD',
+            'EXNKCF9AE58L',
+            'EMN6K974WD88',
+            'A6C5K6GAVGEP',
+            'DY3NFZA429QQ',
+            'WURETM8GGF5C'
+        ];
+
+        class SimpleBookVerifier {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                // 延迟1秒显示验证结果
+                setTimeout(() => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const code = urlParams.get('code');
+                    
+                    if (!code) {
+                        this.showInvalid();
+                        return;
+                    }
+
+                    this.verifyCode(code);
+                }, 1000);
+            }
+
+            verifyCode(code) {
+                // 检查验证码是否有效
+                if (!this.isValidCode(code)) {
+                    this.showInvalid();
+                    return;
+                }
+
+                // 显示验证成功页面
+                this.showValid(code);
+                
+                // 记录查询统计
+                this.recordQuery(code);
+            }
+
+            isValidCode(code) {
+                return VALID_CODES.includes(code);
+            }
+
+            showValid(code) {
+                document.getElementById('codeDisplay').textContent = code;
+                document.getElementById('verifyTime').textContent = new Date().toLocaleString('zh-CN');
+                
+                this.hideAllCards();
+                document.getElementById('validCard').classList.remove('hidden');
+            }
+
+            recordQuery(code) {
+                // 记录查询信息到统计数据
+                const queries = JSON.parse(localStorage.getItem('queries') || '[]');
+                queries.push({
+                    code: code,
+                    query_time: new Date().toISOString(),
+                    user_agent: navigator.userAgent,
+                    timestamp: Date.now(),
+                    ip_hint: this.getIPHint()
+                });
+                localStorage.setItem('queries', JSON.stringify(queries));
+            }
+
+            getIPHint() {
+                // 获取简单的网络信息提示（不涉及隐私）
+                return {
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    language: navigator.language,
+                    platform: navigator.platform
+                };
+            }
+
+            showInvalid() {
+                this.hideAllCards();
+                document.getElementById('invalidCard').classList.remove('hidden');
+            }
+
+            hideAllCards() {
+                document.querySelectorAll('.card').forEach(card => {
+                    card.classList.add('hidden');
+                });
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            new SimpleBookVerifier();
+        });
+
+        // 暴露VALID_CODES给管理页面使用
+        window.getValidCodes = function() {
+            return VALID_CODES;
+        };
+    </script>
+</body>
+</html> 
